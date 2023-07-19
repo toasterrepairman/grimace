@@ -1,8 +1,8 @@
 extern crate gtk;
 use gtk::prelude::*;
-use gtk::{Button, TextView, Window, WindowType, HeaderBar};
-use std::env::args;
-use gtk::Adjustment;
+use gtk::{Button, TextView, Window, WindowType, HeaderBar, Adjustment, Popover, ComboBoxText};
+use mutter::{Model, ModelType};
+use strum::IntoEnumIterator;
 
 fn main() {
     // Initialize GTK
@@ -26,6 +26,38 @@ fn main() {
     // Create the "Save" button
     let save_button = Button::with_label("Save");
     headerbar.pack_start(&save_button);
+
+    // Create the menu button
+    let menu_button = Button::with_label("Menu");
+    headerbar.pack_end(&menu_button);
+
+    // Create the popover for the menu
+    let popover = Popover::new(Some(&menu_button));
+    let vbox = gtk::Box::new(gtk::Orientation::Vertical, 0);
+
+    // Create the ComboBox
+    let combo_box = ComboBoxText::new();
+    combo_box.append_text("Tiny");
+    combo_box.append_text("Small");
+    combo_box.append_text("Medium");
+    combo_box.set_active(Some(0));
+    vbox.pack_start(&combo_box, false, false, 5);
+
+    // Create the "Download Model" button
+    let download_button = Button::with_label("Download Model");
+    vbox.pack_start(&download_button, false, false, 0);
+
+    popover.add(&vbox);
+    menu_button.connect_clicked(move |_| {
+        popover.show_all();
+    });
+    download_button.connect_activate(move |_| {
+
+    });
+
+    // Create the text view and its buffer
+    let text_view = TextView::new();
+    let buffer = text_view.buffer().expect("Failed to get buffer.");
 
     // Create the text view and its buffer
     let text_view = TextView::new();
