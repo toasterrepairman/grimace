@@ -48,6 +48,9 @@
             meson
             git
             wrapGAppsHook4
+            # for llama:
+            llvmPackages.libclang
+            llvmPackages.libcxxClang
           ];
         in
         rec {
@@ -64,11 +67,11 @@
                 pkgs.gdk-pixbuf
                 pkgs.gtk3
                 pkgs.openssl
+                pkgs.alsa-lib
               ];
-              LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
               GTK_THEME="Nordic";
               RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
-              BINDGEN_EXTRA_CLANG_ARGS = "-isystem ${pkgs.llvmPackages.libclang.lib}/lib/clang/${pkgs.lib.getVersion pkgs.clang}/include";
+              LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
             };
           });
 
