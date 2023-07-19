@@ -1,8 +1,14 @@
 extern crate gtk;
+
+use gio::glib::num_processors;
 use gtk::prelude::*;
-use gtk::{Button, TextView, Window, WindowType, HeaderBar, Adjustment, Popover, ComboBoxText};
+use gdk::{keys::constants as key};
+use gtk::{Button, TextView, Window, WindowType, HeaderBar, Adjustment, Popover, ComboBoxText, TextBuffer, TextTagTable};
 use mutter::{Model, ModelType};
-use strum::IntoEnumIterator;
+use rfd::FileDialog;
+use std::path::Path;
+use std::fs::File;
+use std::io::Write;
 
 fn main() {
     // Initialize GTK
@@ -11,7 +17,7 @@ fn main() {
     // Create the main window
     let window = Window::new(WindowType::Toplevel);
     window.set_title("Transcription App");
-    window.set_default_size(600, 400);
+    window.set_default_size(500, 300);
 
     // Create the header bar
     let headerbar = HeaderBar::new();
@@ -51,26 +57,62 @@ fn main() {
     menu_button.connect_clicked(move |_| {
         popover.show_all();
     });
-    download_button.connect_activate(move |_| {
-
-    });
 
     // Create the text view and its buffer
     let text_view = TextView::new();
-    let buffer = text_view.buffer().expect("Failed to get buffer.");
-
-    // Create the text view and its buffer
-    let text_view = TextView::new();
-    let buffer = text_view.buffer().expect("Failed to get buffer.");
+    let mut buffer = TextBuffer::new(None::<&gtk::TextTagTable>);
+    text_view.set_buffer(Some(&buffer));
+    text_view.set_wrap_mode(gtk::WrapMode::Word);
+    text_view.set_border_width(10);
 
     // Add the text view to the main window
     let scrolled_window = gtk::ScrolledWindow::new(None::<&Adjustment>, None::<&Adjustment>);
     scrolled_window.add(&text_view);
     window.add(&scrolled_window);
 
+    open_button.connect_clicked(move |_| {
+        let file = format!("{}", FileDialog::new()
+            .set_directory("~/")
+            .add_filter("Audio", &["mp3", "wav", "flac", "ogg"])
+            .pick_file()
+            .unwrap()
+            .display());
+        let model = Model::download(&ModelType::TinyEn).unwrap();
+
+        let file_stream = std::fs::read(file).unwrap();
+        let transcription = model
+            .transcribe_audio(file_stream, false, false, None)
+            .unwrap();
+        println!("{}", transcription.as_text());
+        buffer.set_text(&format!("{}", transcription.as_text()));
+    });
+
+    save_button.connect_clicked(move |_|{
+        let file = format!("{}", FileDialog::new()
+            .set_directory("~/")
+            .add_filter("Text", &["txt", ""])
+            .save_file()
+            .unwrap()
+            .display());
+        let path = Path::new(&file);
+        let mut file = File::create(&path).unwrap();
+        let fakebuffer = text_view.buffer().unwrap();
+        file.write_all(fakebuffer.text(&fakebuffer.start_iter(), &fakebuffer.end_iter(), false).unwrap().as_bytes()).unwrap();
+    });
+
     // Connect signals
     window.connect_delete_event(|_, _| {
         gtk::main_quit();
+        Inhibit(false)
+    });
+
+    window.connect_key_press_event(|_, event| {
+        if let Some(key) = event.keyval().into() {
+            if event.state().contains(gdk::ModifierType::CONTROL_MASK) && key == key::q {
+                gtk::main_quit();
+                Inhibit(true);
+            }
+        }
         Inhibit(false)
     });
 

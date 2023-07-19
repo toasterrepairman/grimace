@@ -65,11 +65,10 @@
               nativeBuildInputs = dependencies;
               buildInputs = [
                 pkgs.gdk-pixbuf
-                pkgs.gtk3
+                pkgs.gtk3.dev
                 pkgs.openssl
                 pkgs.alsa-lib
               ];
-              GTK_THEME="Nordic";
               RUST_SRC_PATH = pkgs.rustPlatform.rustLibSrc;
               LIBCLANG_PATH = "${pkgs.llvmPackages.libclang.lib}/lib";
             };
