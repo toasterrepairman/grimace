@@ -1,6 +1,16 @@
 # grimace
 ## *a facial expression usually of disgust, disapproval, or pain*
 
-grimace is an experimental gtk program that transcribes stuff with the whisper AI model. if you understand Nix then this will make sense, if not then i am sorry. 
+grimace is an experimental gtk program that transcribes stuff with the whisper AI model. 
 
-`nix run`
+![grimace interface image](resources/grimace.png)
+
+### building
+
+build with `nix run` and use `nix develop` to invoke a development shell. 
+
+### known issues
+
+- [ ] cancelling on open/save functionality panics (i can fix this)
+- [ ] model is re-downloaded with every invocation
+- [ ] settings menu doesn't work

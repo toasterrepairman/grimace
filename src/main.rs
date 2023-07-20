@@ -64,6 +64,8 @@ fn main() {
     text_view.set_buffer(Some(&buffer));
     text_view.set_wrap_mode(gtk::WrapMode::Word);
     text_view.set_border_width(10);
+    text_view.set_editable(false);
+    text_view.set_monospace(true);
 
     // Add the text view to the main window
     let scrolled_window = gtk::ScrolledWindow::new(None::<&Adjustment>, None::<&Adjustment>);
