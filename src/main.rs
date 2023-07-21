@@ -3,12 +3,11 @@ extern crate gtk;
 use gio::glib::num_processors;
 use gtk::prelude::*;
 use gdk::{keys::constants as key};
-use gtk::{Button, TextView, Window, WindowType, HeaderBar, Adjustment, Popover, ComboBoxText, TextBuffer, TextTagTable};
+use gtk::{Button, TextView, Window, WindowType, HeaderBar, Adjustment, Popover, ComboBoxText, TextBuffer};
 use mutter::{Model, ModelType};
 use rfd::FileDialog;
 use std::path::Path;
 use std::fs::File;
-use std::path::PathBuf;
 use std::io::Write;
 use std::fs::create_dir_all;
 
@@ -18,12 +17,12 @@ fn main() {
 
     // Create the main window
     let window = Window::new(WindowType::Toplevel);
-    window.set_title("Transcription App");
+    window.set_title("Grimace");
     window.set_default_size(500, 300);
 
     // Create the header bar
     let headerbar = HeaderBar::new();
-    headerbar.set_title(Some("Transcription App"));
+    headerbar.set_title(Some("Grimace"));
     headerbar.set_show_close_button(true);
     window.set_titlebar(Some(&headerbar));
 
@@ -60,7 +59,7 @@ fn main() {
 
     // Create the text view and its buffer
     let text_view = TextView::new();
-    let mut buffer = TextBuffer::new(None::<&gtk::TextTagTable>);
+    let buffer = TextBuffer::new(None::<&gtk::TextTagTable>);
     text_view.set_buffer(Some(&buffer));
     text_view.set_wrap_mode(gtk::WrapMode::Word);
     text_view.set_border_width(10);
@@ -88,7 +87,7 @@ fn main() {
 
         let file_stream = std::fs::read(file).unwrap();
         let transcription = model
-            .transcribe_audio(file_stream, false, false, None)
+            .transcribe_audio(file_stream, false, false, num_processors()/2)
             .unwrap();
         println!("{}", transcription.as_text());
         buffer.set_text(&format!("{}", transcription.as_text()));
