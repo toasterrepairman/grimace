@@ -8,7 +8,9 @@ use mutter::{Model, ModelType};
 use rfd::FileDialog;
 use std::path::Path;
 use std::fs::File;
+use std::path::PathBuf;
 use std::io::Write;
+use std::fs::create_dir_all;
 
 fn main() {
     // Initialize GTK
@@ -44,8 +46,6 @@ fn main() {
     // Create the ComboBox
     let combo_box = ComboBoxText::new();
     combo_box.append_text("Tiny");
-    combo_box.append_text("Small");
-    combo_box.append_text("Medium");
     combo_box.set_active(Some(0));
     vbox.pack_start(&combo_box, false, false, 5);
 
@@ -79,7 +79,12 @@ fn main() {
             .pick_file()
             .unwrap()
             .display());
-        let model = Model::download(&ModelType::TinyEn).unwrap();
+
+        let home_dir = dirs::home_dir().unwrap();
+        let ai_dir = home_dir.join(".ai");
+        let model_path = ai_dir.join("ggml-tiny.en.bin");
+
+        let model = Model::new(model_path.to_str().unwrap()).unwrap();
 
         let file_stream = std::fs::read(file).unwrap();
         let transcription = model
@@ -100,6 +105,14 @@ fn main() {
         let mut file = File::create(&path).unwrap();
         let fakebuffer = text_view.buffer().unwrap();
         file.write_all(fakebuffer.text(&fakebuffer.start_iter(), &fakebuffer.end_iter(), false).unwrap().as_bytes()).unwrap();
+    });
+
+    download_button.connect_clicked(move |_| {
+        headerbar.set_title(Some("Please wait..."));
+        if let Err(err) = download_model() {
+            eprintln!("Error: {:?}", err);
+        }
+        headerbar.set_title(Some("Grimace"));
     });
 
     // Connect signals
@@ -123,4 +136,30 @@ fn main() {
 
     // Run the main GTK event loop
     gtk::main();
+}
+
+fn download_model() -> Result<(), Box<dyn std::error::Error>> {
+    const MODEL_URL: &str = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin";
+    let home_dir = dirs::home_dir().ok_or("Failed to get home directory")?;
+    let ai_dir = home_dir.join(".ai");
+    let model_path = ai_dir.join("ggml-tiny.en.bin");
+
+    // If the model file already exists, skip the download
+    if Path::new(&model_path).exists() {
+        println!("Model already exists at {:?}", model_path);
+        return Ok(());
+    }
+
+    // Create the ~/.ai/ directory if it doesn't exist
+    create_dir_all(&ai_dir)?;
+
+    // Download the model
+    let mut response = reqwest::blocking::get(MODEL_URL)?;
+    let mut model_file = File::create(&model_path)?;
+    let mut content = Vec::new();
+    response.copy_to(&mut content)?;
+    model_file.write_all(&content)?;
+
+    println!("Model downloaded and saved to {:?}", model_path);
+    Ok(())
 }
