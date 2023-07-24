@@ -87,7 +87,7 @@ fn main() {
 
         let file_stream = std::fs::read(file).unwrap();
         let transcription = model
-            .transcribe_audio(file_stream, false, false, num_processors()/2)
+            .transcribe_audio(file_stream, false, false, Some(2))
             .unwrap();
         println!("{}", transcription.as_text());
         buffer.set_text(&format!("{}", transcription.as_text()));
