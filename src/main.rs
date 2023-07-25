@@ -3,7 +3,7 @@ extern crate gtk;
 use gio::glib::num_processors;
 use gtk::prelude::*;
 use gdk::{keys::constants as key};
-use gtk::{Button, TextView, Window, WindowType, HeaderBar, Adjustment, Popover, ComboBoxText, TextBuffer};
+use gtk::{Button, TextView, Window, WindowType, HeaderBar, Adjustment, Popover, ComboBoxText, TextBuffer, Label};
 use mutter::{Model, ModelType};
 use rfd::FileDialog;
 use std::path::Path;
@@ -41,6 +41,10 @@ fn main() {
     // Create the popover for the menu
     let popover = Popover::new(Some(&menu_button));
     let vbox = gtk::Box::new(gtk::Orientation::Vertical, 0);
+
+    // Create the label
+    let download_label = Label::new(Some("Model selection"));
+    vbox.pack_start(&download_label, false, false, 0);
 
     // Create the ComboBox
     let combo_box = ComboBoxText::new();
