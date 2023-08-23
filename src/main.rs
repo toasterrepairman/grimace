@@ -3,7 +3,7 @@ extern crate gtk;
 use gio::glib::num_processors;
 use gtk::prelude::*;
 use gdk::{keys::constants as key};
-use gtk::{Button, TextView, Window, WindowType, HeaderBar, Adjustment, Popover, ComboBoxText, TextBuffer, Label};
+use gtk::{Button, TextView, Window, WindowType, Statusbar, HeaderBar, Adjustment, Popover, ComboBoxText, TextBuffer, Label, MessageDialog, DialogFlags, MessageType, ButtonsType, Align};
 use mutter::{Model, ModelType};
 use rfd::FileDialog;
 use std::path::Path;
@@ -97,7 +97,26 @@ fn main() {
         buffer.set_text(&format!("{}", transcription.as_text()));
     });
 
-    save_button.connect_clicked(move |_|{
+    &text_view.buffer().unwrap().connect_changed(move |_| {
+        // Create a label for each status bar section
+        let status_label1 = Label::new(Some("Status 1"));
+        let status_label2 = Label::new(Some("Status 2"));
+        let status_label3 = Label::new(Some("Status 3"));
+
+        // Create the status bar and add the labels
+        let status_bar = Statusbar::new();
+        status_bar.pack_start(&status_label1, false, false, 0);
+        status_bar.pack_start(&status_label2, false, false, 0);
+        status_bar.pack_start(&status_label3, false, false, 0);
+
+        // Align the status bar to the bottom of the window
+        vbox.pack_end(&status_bar, false, false, 0);
+        status_bar.set_halign(Align::Center);
+        vbox.show_all()
+        // Show all the widgets
+    });
+
+    save_button.connect_clicked(move |_| {
         let file = format!("{}", FileDialog::new()
             .set_directory("~/")
             .add_filter("Text", &["txt", ""])
@@ -111,11 +130,9 @@ fn main() {
     });
 
     download_button.connect_clicked(move |_| {
-        headerbar.set_title(Some("Please wait..."));
         if let Err(err) = download_model() {
-            eprintln!("Error: {:?}", err);
+            show_message_popup(&format!("Error: {:?}", err));
         }
-        headerbar.set_title(Some("Grimace"));
     });
 
     // Connect signals
@@ -149,7 +166,7 @@ fn download_model() -> Result<(), Box<dyn std::error::Error>> {
 
     // If the model file already exists, skip the download
     if Path::new(&model_path).exists() {
-        println!("Model already exists at {:?}", model_path);
+        show_message_popup(&format!("Model already exists at {:?}", model_path));
         return Ok(());
     }
 
@@ -165,4 +182,37 @@ fn download_model() -> Result<(), Box<dyn std::error::Error>> {
 
     println!("Model downloaded and saved to {:?}", model_path);
     Ok(())
+}
+
+fn show_message_popup(message: &str) {
+    // Initialize GTK
+    if let Err(err) = gtk::init() {
+        println!("Failed to initialize GTK: {}", err);
+        return;
+    }
+
+    // Create a new window
+    let window = Window::new(WindowType::Toplevel);
+    window.set_title("Message Popup");
+    window.set_default_size(400, 200);
+
+    // Create a message dialog
+    let dialog = MessageDialog::new(
+        Some(&window),
+        DialogFlags::MODAL,
+        MessageType::Info,
+        ButtonsType::Ok,
+        message,
+    );
+
+    // Add a response callback
+    dialog.connect_response(|dialog, _| {
+        dialog.close();
+    });
+
+    // Show all components
+    dialog.show_all();
+
+    // Start the GTK main loop
+    gtk::main();
 }
