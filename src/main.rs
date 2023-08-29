@@ -10,6 +10,7 @@ use std::path::Path;
 use std::fs::File;
 use std::io::Write;
 use std::fs::create_dir_all;
+use words_count;
 
 fn main() {
     // Initialize GTK
@@ -40,7 +41,8 @@ fn main() {
 
     // Create the popover for the menu
     let popover = Popover::new(Some(&menu_button));
-    let vbox = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    let vbox = gtk::Box::new(gtk::Orientation::Vertical, 10);
+    vbox.set_border_width(5);
 
     // Create the label
     let download_label = Label::new(Some("Model selection"));
@@ -50,7 +52,7 @@ fn main() {
     let combo_box = ComboBoxText::new();
     combo_box.append_text("Tiny");
     combo_box.set_active(Some(0));
-    vbox.pack_start(&combo_box, false, false, 5);
+    vbox.pack_start(&combo_box, false, false, 0);
 
     // Create the "Download Model" button
     let download_button = Button::with_label("Download Model");
@@ -69,11 +71,18 @@ fn main() {
     text_view.set_border_width(10);
     text_view.set_editable(false);
     text_view.set_monospace(true);
+    text_view.set_cursor_visible(false);
 
     // Add the text view to the main window
+    let main_box = gtk::Box::new(gtk::Orientation::Vertical, 10);
     let scrolled_window = gtk::ScrolledWindow::new(None::<&Adjustment>, None::<&Adjustment>);
     scrolled_window.add(&text_view);
-    window.add(&scrolled_window);
+    scrolled_window.set_vexpand(true);
+    main_box.add(&scrolled_window);
+    window.add(&main_box);
+
+    // buffer factory factory
+    let buffer_factory = text_view.buffer().unwrap();
 
     open_button.connect_clicked(move |_| {
         let file = format!("{}", FileDialog::new()
@@ -98,25 +107,31 @@ fn main() {
     });
 
     &text_view.buffer().unwrap().connect_changed(move |_| {
+        // Summoning ritual for contents of textview
+        let contents = &text_view.buffer()
+            .unwrap().text(&text_view.buffer().unwrap().start_iter(),
+                  &text_view.buffer().unwrap().end_iter(),
+                  false).unwrap();
         // Create a label for each status bar section
-        let status_label1 = Label::new(Some("Status 1"));
-        let status_label2 = Label::new(Some("Status 2"));
+        let status_label1 = Label::new(Some(&format!("Characters: {:?}", &contents.chars().count())));
+        let status_label2 = Label::new(Some(&format!("Words: {:?}", words_count::count(&contents).words)));
         let status_label3 = Label::new(Some("Status 3"));
 
         // Create the status bar and add the labels
         let status_bar = Statusbar::new();
-        status_bar.pack_start(&status_label1, false, false, 0);
-        status_bar.pack_start(&status_label2, false, false, 0);
-        status_bar.pack_start(&status_label3, false, false, 0);
+        status_bar.pack_start(&status_label1, false, false, 15);
+        status_bar.pack_start(&status_label2, false, false, 15);
+        status_bar.pack_start(&status_label3, false, false, 15);
 
         // Align the status bar to the bottom of the window
-        vbox.pack_end(&status_bar, false, false, 0);
+        main_box.pack_end(&status_bar, false, true, 0);
         status_bar.set_halign(Align::Center);
-        vbox.show_all()
+        main_box.show_all()
         // Show all the widgets
     });
 
-    save_button.connect_clicked(move |_| {
+
+    save_button.connect_clicked(move |_|{
         let file = format!("{}", FileDialog::new()
             .set_directory("~/")
             .add_filter("Text", &["txt", ""])
@@ -125,8 +140,7 @@ fn main() {
             .display());
         let path = Path::new(&file);
         let mut file = File::create(&path).unwrap();
-        let fakebuffer = text_view.buffer().unwrap();
-        file.write_all(fakebuffer.text(&fakebuffer.start_iter(), &fakebuffer.end_iter(), false).unwrap().as_bytes()).unwrap();
+        file.write_all(&buffer_factory.text(&buffer_factory.start_iter(), &buffer_factory.end_iter(), false).unwrap().as_bytes()).unwrap();
     });
 
     download_button.connect_clicked(move |_| {
