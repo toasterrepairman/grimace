@@ -12,6 +12,12 @@ use std::io::Write;
 use std::fs::create_dir_all;
 use words_count;
 
+struct TranscriptionModel {
+    name: String,
+    download_link: String,
+    filename: String,
+}
+
 fn main() {
     // Initialize GTK
     gtk::init().expect("Failed to initialize GTK.");
@@ -50,8 +56,6 @@ fn main() {
 
     // Create the ComboBox
     let combo_box = ComboBoxText::new();
-    combo_box.append_text("Tiny");
-    combo_box.set_active(Some(0));
     vbox.pack_start(&combo_box, false, false, 0);
 
     // Create the "Download Model" button
@@ -62,6 +66,37 @@ fn main() {
     menu_button.connect_clicked(move |_| {
         popover.show_all();
     });
+
+    // Create an array of transcription models
+    let models = vec![
+        TranscriptionModel {
+            name: "Tiny".to_string(),
+            download_link: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin".to_string(),
+            filename: "ggml-tiny.bin".to_string(),
+        },
+        TranscriptionModel {
+            name: "Small".to_string(),
+            download_link: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin".to_string(),
+            filename: "ggml-small.bin".to_string(),
+        },
+        TranscriptionModel {
+            name: "Medium".to_string(),
+            download_link: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin".to_string(),
+            filename: "ggml-medium.bin".to_string(),
+        },
+        TranscriptionModel {
+            name: "Large".to_string(),
+            download_link: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large.bin".to_string(),
+            filename: "ggml-large.bin".to_string(),
+        },
+    ];
+
+    // Populate the combo box with model names
+    for model in &models {
+        combo_box.append_text(&model.name);
+    }
+    combo_box.set_active(Some(0));
+
 
     // Create the text view and its buffer
     let text_view = TextView::new();
@@ -74,7 +109,7 @@ fn main() {
     text_view.set_cursor_visible(false);
 
     // Add the text view to the main window
-    let main_box = gtk::Box::new(gtk::Orientation::Vertical, 10);
+    let main_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
     let scrolled_window = gtk::ScrolledWindow::new(None::<&Adjustment>, None::<&Adjustment>);
     scrolled_window.add(&text_view);
     scrolled_window.set_vexpand(true);
@@ -83,6 +118,20 @@ fn main() {
 
     // buffer factory factory
     let buffer_factory = text_view.buffer().unwrap();
+
+    // Create a label for each status bar section
+    let status_label1 = Label::new(Some(""));
+    let status_label2 = Label::new(Some(""));
+
+    // Create the status bar and add the labels
+    let status_bar = Statusbar::new();
+    status_bar.pack_start(&status_label1, false, false, 0);
+    status_bar.pack_start(&status_label2, false, false, 0);
+
+    // Align the status bar to the bottom of the window
+    main_box.pack_end(&status_bar, false, true, 0);
+    status_bar.set_halign(Align::Center);
+    status_bar.set_valign(Align::Center);
 
     open_button.connect_clicked(move |_| {
         let file = format!("{}", FileDialog::new()
@@ -112,22 +161,9 @@ fn main() {
             .unwrap().text(&text_view.buffer().unwrap().start_iter(),
                   &text_view.buffer().unwrap().end_iter(),
                   false).unwrap();
-        // Create a label for each status bar section
-        let status_label1 = Label::new(Some(&format!("Characters: {:?}", &contents.chars().count())));
-        let status_label2 = Label::new(Some(&format!("Words: {:?}", words_count::count(&contents).words)));
-        let status_label3 = Label::new(Some("Status 3"));
 
-        // Create the status bar and add the labels
-        let status_bar = Statusbar::new();
-        status_bar.pack_start(&status_label1, false, false, 15);
-        status_bar.pack_start(&status_label2, false, false, 15);
-        status_bar.pack_start(&status_label3, false, false, 15);
-
-        // Align the status bar to the bottom of the window
-        main_box.pack_end(&status_bar, false, true, 0);
-        status_bar.set_halign(Align::Center);
-        main_box.show_all()
-        // Show all the widgets
+        status_label1.set_label(&format!("Characters: {:?}", &contents.chars().count()));
+        status_label2.set_label(&format!("Words: {:?}", words_count::count(&contents).words));
     });
 
 
