@@ -67,7 +67,6 @@ fn main() {
         popover.show_all();
     });
 
-    // Create an array of transcription models
     let models = vec![
         TranscriptionModel {
             name: "Tiny".to_string(),
@@ -97,7 +96,6 @@ fn main() {
     }
     combo_box.set_active(Some(0));
 
-
     // Create the text view and its buffer
     let text_view = TextView::new();
     let buffer = TextBuffer::new(None::<&gtk::TextTagTable>);
@@ -125,8 +123,8 @@ fn main() {
 
     // Create the status bar and add the labels
     let status_bar = Statusbar::new();
-    status_bar.pack_start(&status_label1, false, false, 0);
-    status_bar.pack_start(&status_label2, false, false, 0);
+    status_bar.pack_start(&status_label1, true, false, 5);
+    status_bar.pack_start(&status_label2, true, false, 5);
 
     // Align the status bar to the bottom of the window
     main_box.pack_end(&status_bar, false, true, 0);
@@ -138,7 +136,7 @@ fn main() {
             .set_directory("~/")
             .add_filter("Audio", &["mp3", "wav", "flac", "ogg"])
             .pick_file()
-            .unwrap()
+            .unwrap_or_else(|| dirs::home_dir().unwrap()) // FIXME
             .display());
 
         let home_dir = dirs::home_dir().unwrap();
@@ -180,7 +178,7 @@ fn main() {
     });
 
     download_button.connect_clicked(move |_| {
-        if let Err(err) = download_model() {
+        if let Err(err) = download_model(&combo_box.active_text().unwrap()) {
             show_message_popup(&format!("Error: {:?}", err));
         }
     });
@@ -208,11 +206,11 @@ fn main() {
     gtk::main();
 }
 
-fn download_model() -> Result<(), Box<dyn std::error::Error>> {
-    const MODEL_URL: &str = "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin";
+fn download_model(model: &str) -> Result<(), Box<dyn std::error::Error>> {
+    let model_url: &str = &format!("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-{}.bin", model.to_lowercase());
     let home_dir = dirs::home_dir().ok_or("Failed to get home directory")?;
     let ai_dir = home_dir.join(".ai");
-    let model_path = ai_dir.join("ggml-tiny.en.bin");
+    let model_path = ai_dir.join(format!("ggml-{}.bin", model.to_lowercase()));
 
     // If the model file already exists, skip the download
     if Path::new(&model_path).exists() {
@@ -224,7 +222,7 @@ fn download_model() -> Result<(), Box<dyn std::error::Error>> {
     create_dir_all(&ai_dir)?;
 
     // Download the model
-    let mut response = reqwest::blocking::get(MODEL_URL)?;
+    let mut response = reqwest::blocking::get(model_url)?;
     let mut model_file = File::create(&model_path)?;
     let mut content = Vec::new();
     response.copy_to(&mut content)?;
@@ -250,8 +248,8 @@ fn show_message_popup(message: &str) {
     let dialog = MessageDialog::new(
         Some(&window),
         DialogFlags::MODAL,
-        MessageType::Info,
-        ButtonsType::Ok,
+        MessageType::Warning,
+        ButtonsType::Close,
         message,
     );
 
