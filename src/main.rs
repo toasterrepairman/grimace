@@ -141,16 +141,24 @@ fn main() {
 
         let home_dir = dirs::home_dir().unwrap();
         let ai_dir = home_dir.join(".ai");
-        let model_path = ai_dir.join("ggml-tiny.en.bin");
+        let model_path = ai_dir.join("ggml-tiny.bin");
 
-        let model = Model::new(model_path.to_str().unwrap()).unwrap();
+        let model_result = Model::new(model_path.to_str().unwrap());
 
-        let file_stream = std::fs::read(file).unwrap();
-        let transcription = model
-            .transcribe_audio(file_stream, false, false, Some(2))
-            .unwrap();
-        println!("{}", transcription.as_text());
-        buffer.set_text(&format!("{}", transcription.as_text()));
+        if let Err(_) = &model_result {
+            println!("Cannot find model");
+            show_message_popup("Cannot find model");
+        } else {
+            println!("Found model");
+            // You can use the 'model' instance here
+
+            let file_stream = std::fs::read(file).unwrap();
+            let transcription = model_result.unwrap()
+                .transcribe_audio(file_stream, false, false, Some(2))
+                .unwrap();
+            println!("{}", transcription.as_text());
+            buffer.set_text(&format!("{}", transcription.as_text()));
+        }
     });
 
     &text_view.buffer().unwrap().connect_changed(move |_| {
