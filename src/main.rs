@@ -67,35 +67,6 @@ fn main() {
         popover.show_all();
     });
 
-    let models = vec![
-        TranscriptionModel {
-            name: "Tiny".to_string(),
-            download_link: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin".to_string(),
-            filename: "ggml-tiny.bin".to_string(),
-        },
-        TranscriptionModel {
-            name: "Small".to_string(),
-            download_link: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin".to_string(),
-            filename: "ggml-small.bin".to_string(),
-        },
-        TranscriptionModel {
-            name: "Medium".to_string(),
-            download_link: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin".to_string(),
-            filename: "ggml-medium.bin".to_string(),
-        },
-        TranscriptionModel {
-            name: "Large".to_string(),
-            download_link: "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large.bin".to_string(),
-            filename: "ggml-large.bin".to_string(),
-        },
-    ];
-
-    // Populate the combo box with model names
-    for model in &models {
-        combo_box.append_text(&model.name);
-    }
-    combo_box.set_active(Some(0));
-
     // Create the text view and its buffer
     let text_view = TextView::new();
     let buffer = TextBuffer::new(None::<&gtk::TextTagTable>);
@@ -152,6 +123,13 @@ fn main() {
             println!("Found model");
             // You can use the 'model' instance here
 
+            if let Err(_) = std::fs::read(&file) {
+                println!("Please select an audio file from the picker");
+                show_message_popup("Please select an audio file from the picker");
+            } else {
+                println!("Found model");
+            }
+            
             let file_stream = std::fs::read(file).unwrap();
             let transcription = model_result.unwrap()
                 .transcribe_audio(file_stream, false, false, Some(2))
