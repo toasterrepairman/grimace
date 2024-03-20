@@ -1,15 +1,19 @@
 extern crate gtk;
 
+use gdk::keys::constants as key;
 use gio::glib::num_processors;
 use gtk::prelude::*;
-use gdk::{keys::constants as key};
-use gtk::{Button, TextView, Window, WindowType, Statusbar, HeaderBar, Adjustment, Popover, ComboBoxText, TextBuffer, Label, MessageDialog, DialogFlags, MessageType, ButtonsType, Align};
+use gtk::Spinner;
+use gtk::{
+    Adjustment, Align, Button, ButtonsType, ComboBoxText, DialogFlags, HeaderBar, Label,
+    MessageDialog, MessageType, Popover, Statusbar, TextBuffer, TextView, Window, WindowType,
+};
 use mutter::{Model, ModelType};
 use rfd::FileDialog;
-use std::path::Path;
+use std::fs::create_dir_all;
 use std::fs::File;
 use std::io::Write;
-use std::fs::create_dir_all;
+use std::path::Path;
 use words_count;
 
 struct TranscriptionModel {
@@ -67,6 +71,43 @@ fn main() {
         popover.show_all();
     });
 
+    let models = vec![
+        TranscriptionModel {
+            name: "Tiny".to_string(),
+            download_link:
+                "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-tiny.bin"
+                    .to_string(),
+            filename: "ggml-tiny.bin".to_string(),
+        },
+        TranscriptionModel {
+            name: "Small".to_string(),
+            download_link:
+                "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-small.bin"
+                    .to_string(),
+            filename: "ggml-small.bin".to_string(),
+        },
+        TranscriptionModel {
+            name: "Medium".to_string(),
+            download_link:
+                "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-medium.bin"
+                    .to_string(),
+            filename: "ggml-medium.bin".to_string(),
+        },
+        TranscriptionModel {
+            name: "Large".to_string(),
+            download_link:
+                "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-large.bin"
+                    .to_string(),
+            filename: "ggml-large.bin".to_string(),
+        },
+    ];
+
+    // Populate the combo box with model names
+    for model in &models {
+        combo_box.append_text(&model.name);
+    }
+    combo_box.set_active(Some(0));
+
     // Create the text view and its buffer
     let text_view = TextView::new();
     let buffer = TextBuffer::new(None::<&gtk::TextTagTable>);
@@ -103,12 +144,15 @@ fn main() {
     status_bar.set_valign(Align::Center);
 
     open_button.connect_clicked(move |_| {
-        let file = format!("{}", FileDialog::new()
-            .set_directory("~/")
-            .add_filter("Audio", &["mp3", "wav", "flac", "ogg"])
-            .pick_file()
-            .unwrap_or_else(|| dirs::home_dir().unwrap()) // FIXME
-            .display());
+        let file = format!(
+            "{}",
+            FileDialog::new()
+                .set_directory("~/")
+                .add_filter("Audio", &["mp3", "wav", "flac", "ogg"])
+                .pick_file()
+                .unwrap_or_else(|| dirs::home_dir().unwrap()) // FIXME
+                .display()
+        );
 
         let home_dir = dirs::home_dir().unwrap();
         let ai_dir = home_dir.join(".ai");
@@ -129,9 +173,10 @@ fn main() {
             } else {
                 println!("Found model");
             }
-            
+
             let file_stream = std::fs::read(file).unwrap();
-            let transcription = model_result.unwrap()
+            let transcription = model_result
+                .unwrap()
                 .transcribe_audio(file_stream, false, false, Some(2))
                 .unwrap();
             println!("{}", transcription.as_text());
@@ -141,26 +186,43 @@ fn main() {
 
     &text_view.buffer().unwrap().connect_changed(move |_| {
         // Summoning ritual for contents of textview
-        let contents = &text_view.buffer()
-            .unwrap().text(&text_view.buffer().unwrap().start_iter(),
-                  &text_view.buffer().unwrap().end_iter(),
-                  false).unwrap();
+        let contents = &text_view
+            .buffer()
+            .unwrap()
+            .text(
+                &text_view.buffer().unwrap().start_iter(),
+                &text_view.buffer().unwrap().end_iter(),
+                false,
+            )
+            .unwrap();
 
         status_label1.set_label(&format!("Characters: {:?}", &contents.chars().count()));
         status_label2.set_label(&format!("Words: {:?}", words_count::count(&contents).words));
     });
 
-
-    save_button.connect_clicked(move |_|{
-        let file = format!("{}", FileDialog::new()
-            .set_directory("~/")
-            .add_filter("Text", &["txt", ""])
-            .save_file()
-            .unwrap()
-            .display());
+    save_button.connect_clicked(move |_| {
+        let file = format!(
+            "{}",
+            FileDialog::new()
+                .set_directory("~/")
+                .add_filter("Text", &["txt", ""])
+                .save_file()
+                .unwrap()
+                .display()
+        );
         let path = Path::new(&file);
         let mut file = File::create(&path).unwrap();
-        file.write_all(&buffer_factory.text(&buffer_factory.start_iter(), &buffer_factory.end_iter(), false).unwrap().as_bytes()).unwrap();
+        file.write_all(
+            &buffer_factory
+                .text(
+                    &buffer_factory.start_iter(),
+                    &buffer_factory.end_iter(),
+                    false,
+                )
+                .unwrap()
+                .as_bytes(),
+        )
+        .unwrap();
     });
 
     download_button.connect_clicked(move |_| {
@@ -193,7 +255,10 @@ fn main() {
 }
 
 fn download_model(model: &str) -> Result<(), Box<dyn std::error::Error>> {
-    let model_url: &str = &format!("https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-{}.bin", model.to_lowercase());
+    let model_url: &str = &format!(
+        "https://huggingface.co/ggerganov/whisper.cpp/resolve/main/ggml-{}.bin",
+        model.to_lowercase()
+    );
     let home_dir = dirs::home_dir().ok_or("Failed to get home directory")?;
     let ai_dir = home_dir.join(".ai");
     let model_path = ai_dir.join(format!("ggml-{}.bin", model.to_lowercase()));
