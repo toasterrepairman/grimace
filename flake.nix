@@ -61,6 +61,12 @@
               cargoLock = {
                 lockFile = ./Cargo.lock;
               };
+
+              postBuild = ''
+              install -Dt $out/share/applications resources/grimace.desktop
+              
+              install -Dt $out/share/icons resources/icon-grimace.png
+              '';
               # why is it like this
               nativeBuildInputs = dependencies;
               buildInputs = [

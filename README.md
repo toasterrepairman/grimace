@@ -1,6 +1,6 @@
 # grimace
 
-![grimace logo image](resources/grimace_icon.png)
+![grimace logo image](resources/icon-grimace.png)
 
 ## *a facial expression usually of disgust, disapproval, or pain*
 

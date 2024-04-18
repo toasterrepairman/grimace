@@ -1,0 +1,21 @@
+[Desktop Entry]
+##  The name of the application ##
+Name=Grimace
+GenericName=AI Audio Transcriber
+ 
+## A comment which act as a tooltip ##
+Comment=Transcribe audio into text using AI on your device.
+ 
+## The executable of the application with optional args ##
+## You can state full path too ##
+Exec=grimace
+ 
+## State the name of the icon that will be used to display this entry ##
+Icon=icon-grimace
+ 
+## Is it a terminal app? For example htop will be set as Terminal=True ##
+## Then default terminal app will be used to open the 'htop' ##
+Terminal=false
+ 
+##  The type as listed  ##
+Type=Application
