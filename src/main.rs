@@ -135,8 +135,12 @@ fn main() {
 
     // Create the status bar and add the labels
     let status_bar = Statusbar::new();
-    status_bar.pack_start(&status_label1, true, false, 5);
-    status_bar.pack_start(&status_label2, true, false, 5);
+    status_bar.pack_start(&status_label1, true, false, 0);
+    status_bar.pack_start(&status_label2, true, false, 0);
+    // lmao that this actually fixes the alignment
+    status_bar.set_margin(5);
+    status_bar.set_margin_bottom(10);
+    status_bar.set_margin_top(0);
 
     // Align the status bar to the bottom of the window
     main_box.pack_end(&status_bar, false, true, 0);
