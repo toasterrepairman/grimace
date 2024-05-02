@@ -132,6 +132,7 @@ fn main() {
     // Create a label for each status bar section
     let status_label1 = Label::new(Some(""));
     let status_label2 = Label::new(Some(""));
+    status_label1.set_margin_end(20);
 
     // Create the status bar and add the labels
     let status_bar = Statusbar::new();
@@ -188,7 +189,7 @@ fn main() {
         }
     });
 
-    &text_view.buffer().unwrap().connect_changed(move |_| {
+    text_view.buffer().unwrap().connect_changed(move |_| {
         // Summoning ritual for contents of textview
         let contents = &text_view
             .buffer()
